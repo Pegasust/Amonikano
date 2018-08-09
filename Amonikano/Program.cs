@@ -18,15 +18,6 @@ namespace Amonikano
         public const string token = "NDc3MTQ5NTg2ODUxMzY0ODY3.Dk4JiA.6I0tIiF7WUvG_24OEEhAck996cI";
     }
 
-    public static class bot_conf
-    {
-        public static Discord.WebSocket.DiscordSocketConfig socketConfig = new Discord.WebSocket.DiscordSocketConfig
-        {
-            MessageCacheSize = 155 //Number of message per channel getting , idk?
-
-        };
-    }
-
 
 
     class Program
