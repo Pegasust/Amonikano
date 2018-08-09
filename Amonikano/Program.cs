@@ -22,7 +22,7 @@ namespace Amonikano
     {
         public static Discord.WebSocket.DiscordSocketConfig socketConfig = new Discord.WebSocket.DiscordSocketConfig
         {
-            MessageCacheSize = 100, //Number of message per channel, idk?
+            MessageCacheSize = 152, //Number of message per channel getting , idk?
 
         };
     }
