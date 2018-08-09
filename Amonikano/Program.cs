@@ -15,8 +15,9 @@ namespace Amonikano
     {
         public const string client_id = "477149586851364867"; //I only all caps macros
         public const string client_secret = "QC6QmXIgHG1LwW9XrqVs5cvXln4PeRPQ";
-        public const string token = "NDc3MTQ5NTg2ODUxMzY0ODY3.Dk4JiA.6I0tIiF7WUvG_24OEEhAck996cI";
+        public const string token = "NDc3MTQ5NTg2ODUxMzY0ODY3.Dk4JiA.6I0tIiF7WUvG_24OEEhAck996cI____DELETETHIS_____";
     }
+
 
 
 
