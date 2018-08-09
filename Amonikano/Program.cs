@@ -22,7 +22,7 @@ namespace Amonikano
     {
         public static Discord.WebSocket.DiscordSocketConfig socketConfig = new Discord.WebSocket.DiscordSocketConfig
         {
-            MessageCacheSize = 152, //Number of message per channel getting , idk?
+            MessageCacheSize = 155 //Number of message per channel getting , idk?
 
         };
     }
@@ -34,7 +34,7 @@ namespace Amonikano
         static void Main(string[] args)
             => //This symbol is a lambda expression, search it up if you have to
             new Program().MainAsync(args).GetAwaiter().GetResult();
-        
+
         /**
          * Basically, this calls an asynchronous main loop.
          * Because we assume the program run so fast that it runs asynchronously, there's nothing wrong with this.
@@ -85,9 +85,9 @@ namespace Amonikano
                 DateTimeOffset msg_out = msg.Timestamp;
                 TimeSpan delta = created - msg_out;
                 output = "The message, was created at " + created.ToString()
-                    +" and was out at "+ msg_out.ToString()
-                    +" which took " +  delta.Milliseconds + "ms.";
-                await msg.Channel.SendMessageAsync("pong;\n"+ output);
+                    + " and was out at " + msg_out.ToString()
+                    + " which took " + delta.Milliseconds + "ms.";
+                await msg.Channel.SendMessageAsync("pong;\n" + output);
             }
         }
     }
