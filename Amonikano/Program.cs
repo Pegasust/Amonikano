@@ -20,6 +20,7 @@ namespace Amonikano
         public const string client_id = "477149586851364867"; //I only all caps macros
         public const string client_secret = "QC6QmXIgHG1LwW9XrqVs5cvXln4PeRPQ";
         public const string token = "NDc3MTQ5NTg2ODUxMzY0ODY3.Dk4JiA.6I0tIiF7WUvG_24OEEhAck996cI";
+        public const ulong dev_channel_id = 477182725447483410;
     }
 
     public static class bot_conf
@@ -35,11 +36,11 @@ namespace Amonikano
         public const bool nullify_system_message = true;
 
         public const bool check_prefix_determine_command = true;
-        //public const string str_command_prefix = "»";
-        public const char char_command_prefix = '»';
+        public const string str_command_prefix = "!";
+        public const char char_command_prefix = '!';
 
-        public const bool check_suffix_determine_command = true;
-        //public const string str_command_suffix = "«";
+        public const bool check_suffix_determine_command = false;
+        public const string str_command_suffix = "«";
         public const char char_command_suffix = '«';
 
         public static bool is_command(Discord.WebSocket.SocketMessage msg)
@@ -56,7 +57,7 @@ namespace Amonikano
                 if (msg == null)
                     return false;
             }
-            
+
             //set up processor (sorry if it's getting less and less readable)
             #region processor
             Dictionary<lookup_type, char[]> char_lookup = new Dictionary<lookup_type, char[]>();
@@ -69,11 +70,17 @@ namespace Amonikano
                 char_lookup[lookup_type.suffix] = new char[1] { char_command_suffix };
             }
             string content = msg.Content;
-            custom_string_processor processor = new custom_string_processor(char_lookup,null,true);
+            custom_string_processor processor = new custom_string_processor(char_lookup, null, true);
             #endregion
 
             return processor.string_satisfied(content);
         }
+
+        public const string startup_message = "Configs: \n " + (process_command_when_mentioned ? "+ process command if mentioned\n" : "")
+            + (nullify_system_message ? "+ nullify system messages\n" : "")
+            + (check_prefix_determine_command ? "+ command needs prefix: " + str_command_prefix + "\n" : "")
+            + (check_suffix_determine_command ? "+ command needs suffix: " + str_command_suffix + "\n" : "")
+            ;
 
         #endregion
         /// <summary>
@@ -88,14 +95,25 @@ namespace Amonikano
 
 
 
+
     class Program
     {
-        Discord.WebSocket.
-    DiscordSocketClient client;
+        bool is_startup = true;               
+        Discord.WebSocket.DiscordSocketClient client;
+        Discord.WebSocket.ISocketMessageChannel main_dev_channel;
+        
+        private async Task start()
+        {
+            main_dev_channel = (Discord.WebSocket.ISocketMessageChannel) client.GetChannel(bot_const.dev_channel_id);
+            await main_dev_channel.SendMessageAsync(bot_conf.startup_message);
+
+        }
+
         static void Main(string[] args)
             => //This symbol is a lambda expression, search it up if you have to
             new Program().MainAsync(args).GetAwaiter().GetResult();
-        
+
+
         /**
          * Basically, this calls an asynchronous main loop.
          * Because we assume the program run so fast that it runs asynchronously, there's nothing wrong with this.
@@ -104,7 +122,7 @@ namespace Amonikano
          * From here, I'll try to make the code looks neat and explanatory :)
          * */
         public async Task MainAsync(string[] args)
-        {
+        {            
             //This is from another namespace. I don't intend to include a using namespace because it would look messy on the long run
 
             client = new Discord.WebSocket.
@@ -115,9 +133,16 @@ namespace Amonikano
             await client.LoginAsync(TokenType.Bot, bot_const.token);
 
             await client.StartAsync();
-
+            
             await Task.Delay(-1);
+            client.Connected += start;
+            /*if (is_startup)
+            {
+                await start();
+                is_startup = false;
+            }*/
         }
+
 
         /// <summary>
         /// Gets called whenever the client logs something
