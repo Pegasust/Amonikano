@@ -1,10 +1,10 @@
 ﻿using Discord;
 using Amonikano.Library;
 using static Amonikano.Library.custom_string_processor;
-
+using static Amonikano.Library.Helper;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Generic; //Why collections when you can use array for more quality codes?
+using System.Linq; //I hate Linq :(
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,16 +15,31 @@ namespace Amonikano
     /// <summary>
     /// All of these constants are supposed to be kept secret, but whatever, we don't need secret do we?
     /// </summary>
-    public static class bot_const //TO HELL WITH NAMING PROBLEMS, I DON'T CARE
+    public static class bot_const
     {
-        public const string client_id = "477149586851364867"; //I only all caps macros
+        /// <summary>
+        /// Gotten from website. Probably unique per application
+        /// </summary>
+        public const string client_id = "477149586851364867";
+        public const string client_mention_id = "<@" + client_id + ">";
+        
+        /// <summary>
+        /// Gotton from website. Probably unique per application
+        /// </summary>
         public const string client_secret = "QC6QmXIgHG1LwW9XrqVs5cvXln4PeRPQ";
+        /// <summary>
+        /// Gotten from website. Impartant shit, grant 100% access to application
+        /// </summary>
         public const string token = "NDc3MTQ5NTg2ODUxMzY0ODY3.Dk4JiA.6I0tIiF7WUvG_24OEEhAck996cI";
+        /// <summary>
+        /// devv/bot-test id
+        /// </summary>
         public const ulong dev_channel_id = 477182725447483410;
     }
 
     public static class bot_conf
     {
+#if COMPLETE
         #region command and user message distinguishment
         /// <summary>
         /// Set to true, and whether a command follows the syntax of a command or not, it would still be processed if mentioned.
@@ -59,7 +74,7 @@ namespace Amonikano
             }
 
             //set up processor (sorry if it's getting less and less readable)
-            #region processor
+        #region processor
             Dictionary<lookup_type, char[]> char_lookup = new Dictionary<lookup_type, char[]>();
             if (check_prefix_determine_command)
             {
@@ -71,7 +86,7 @@ namespace Amonikano
             }
             string content = msg.Content;
             custom_string_processor processor = new custom_string_processor(char_lookup, null, true);
-            #endregion
+        #endregion
 
             return processor.string_satisfied(content);
         }
@@ -91,6 +106,75 @@ namespace Amonikano
             MessageCacheSize = 100, //Number of message per channel getting , idk?
             
         };
+#else
+        public const char char_prefix = '}';
+        public const string str_prefix = "}";
+        public static Discord.WebSocket.DiscordSocketConfig socket_config = new Discord.WebSocket.DiscordSocketConfig
+        {
+            MessageCacheSize = 100,
+
+        };
+        public const string startup_message = "";
+        public static bool is_command(Discord.WebSocket.SocketMessage msg)
+        {
+            string msg_content = msg.Content;
+            msg_content = msg_content.Trim();
+            return msg_content[0] == char_prefix;
+        }
+        public static bool is_command(Discord.WebSocket.SocketMessage msg, out string new_string)
+        {
+            string msg_content = msg.Content;
+            msg_content = msg_content.Trim();
+            if (msg_content[0] == char_prefix)
+            {
+                new_string = msg_content.Substring(1);
+                return true;
+            }
+            else
+            {
+                new_string = null;
+                return false;
+            }
+        }
+        public static bool is_command(string trimmed_msg)
+        {
+            return trimmed_msg[0] == char_prefix;
+        }
+        public static bool is_command(string trimmed_msg, out string new_string)
+        {
+            if (trimmed_msg[0] == char_prefix)
+            {
+                new_string = trimmed_msg.Substring(1);
+                return true;
+            }
+            else
+            {
+                new_string = null;
+                return false;
+            }
+        }
+        public static bool is_command_raw(string untrimmed_msg)
+        {
+            untrimmed_msg = untrimmed_msg.Trim();
+            return untrimmed_msg[0] == char_prefix;
+        }
+        public static bool is_command_raw(string untrimmed_msg, out string new_msg)
+        {
+            untrimmed_msg = untrimmed_msg.Trim();
+            if (untrimmed_msg[0] == char_prefix)
+            {
+                new_msg = untrimmed_msg.Substring(1);
+                return true;
+            }
+            else
+            {
+                new_msg = null;
+                return false;
+            }
+        }
+
+#endif
+
     }
 
 
@@ -101,12 +185,13 @@ namespace Amonikano
         bool is_startup = true;               
         Discord.WebSocket.DiscordSocketClient client;
         Discord.WebSocket.ISocketMessageChannel main_dev_channel;
-        
+        public static Discord.Commands.CommandService command_serv;
+        IServiceProvider service;
+
         private async Task start()
         {
             main_dev_channel = (Discord.WebSocket.ISocketMessageChannel) client.GetChannel(bot_const.dev_channel_id);
             await main_dev_channel.SendMessageAsync(bot_conf.startup_message);
-
         }
 
         static void Main(string[] args)
@@ -128,14 +213,21 @@ namespace Amonikano
             client = new Discord.WebSocket.
                 DiscordSocketClient(bot_conf.socket_config);
 
+            command_serv = new Discord.Commands.CommandService();
+            
+
+            service = new ServiceCollection().BuildServiceProvider();
             client.Log += on_client_log; //client.Log is like a delegate function (a list of function, or an event)
             client.MessageReceived += on_message_received;
+
+            await load_commands();
+
             await client.LoginAsync(TokenType.Bot, bot_const.token);
 
             await client.StartAsync();
             
             await Task.Delay(-1);
-            client.Connected += start;
+            //client.Connected += start;
             /*if (is_startup)
             {
                 await start();
@@ -156,6 +248,11 @@ namespace Amonikano
             return Task.CompletedTask;
         }
 
+        private async Task load_commands()
+        {
+            await command_serv.AddModulesAsync(Assembly.GetEntryAssembly());
+        }
+
         /// <summary>
         /// Gets called whenever the client receives a message from discord
         /// </summary>
@@ -163,19 +260,35 @@ namespace Amonikano
         /// <returns></returns>
         private async Task on_message_received(Discord.WebSocket.SocketMessage msg)
         {
+            string potential_command;
+            bool is_command_by_mentioned = false;
             //TODO: make this work
-            if (msg.MentionedUsers == client.CurrentUser)
+            Console.WriteLine("=============== New Message ===============");
+            string content = msg.Content;
+            Discord.WebSocket.SocketUserMessage user_msg = msg as Discord.WebSocket.SocketUserMessage;
+            Console.WriteLine("Content: " + content);
+            Console.WriteLine("Is user message: " + (user_msg != null ? "true" : "false"));
+            if (msg.Author.IsBot)
             {
-                await msg.Channel.SendMessageAsync("You mentioned me?");
+                Console.WriteLine("Message is generated by a bot");
             }
-#if DEBUG
-            else
+            if (same_user(msg.Author, client.CurrentUser))
             {
-                Console.WriteLine("Mentioned user: "+msg.MentionedUsers);
-                Console.WriteLine("Me: " + client.CurrentUser);
+                Console.WriteLine("Message generated by myself, aborting processing");
+                return;
             }
 
+            if (msg_mentioned_user(client.CurrentUser, user_msg,out potential_command))
+            {
+#if DEBUG
+                await msg.Channel.SendMessageAsync("You mentioned me?");
 #endif
+                is_command_by_mentioned = true;
+            }
+            else
+            {
+                Console.WriteLine("Too bad, not mentioned :(.");
+            }
 #if DEBUG
             if (msg.Content == "!ping")
             {
@@ -194,15 +307,32 @@ namespace Amonikano
 
             System.DateTime benchmark_start = DateTime.Now;
 #endif
-            if (bot_conf.is_command(msg))
+            if (is_command_by_mentioned || bot_conf.is_command_raw(content, out potential_command))
             {
-                string output = "gratz, it's a command alright?";
+                string output = "Detected input command of "+potential_command+".";
 #if DEBUG
                 System.DateTime benchmark_end = DateTime.Now;
                 TimeSpan delta = benchmark_end - benchmark_start;
-                output += " "+ delta.TotalMilliseconds.ToString()+ "ms took to complete algorithm.";
+                output += " "+ delta.TotalMilliseconds.ToString()+ "ms took to complete command detection algorithm.";
 #endif
                 await msg.Channel.SendMessageAsync(output);
+
+#if DEBUG
+                DateTime start = DateTime.Now;
+#endif
+                //command
+                Discord.Commands.CommandContext context = new Discord.Commands.CommandContext(client, user_msg);
+                var result = await command_serv.ExecuteAsync(context, potential_command, service);
+                if (!result.IsSuccess)
+                {
+                    await context.Channel.SendMessageAsync(result.ErrorReason);
+                }
+#if DEBUG
+                DateTime end = DateTime.Now;
+                TimeSpan delta_time = end - start;
+                await msg.Channel.SendMessageAsync("It took additionally " + delta_time.TotalMilliseconds.ToString() + " ms to execute command");
+                
+#endif
             }
         }
     }

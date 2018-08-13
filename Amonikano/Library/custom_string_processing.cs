@@ -1,4 +1,4 @@
-﻿#define COMPLETE
+﻿//#define COMPLETE
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,10 +7,11 @@ using System.Threading.Tasks;
 
 namespace Amonikano.Library
 {
-#if COMPLETE || DEBUG
+#if COMPLETE
     //TODO: Async support
     public class custom_string_processor
     {
+        
         public enum logical_group
         {
             and = 0,
@@ -153,6 +154,8 @@ namespace Amonikano.Library
             }
             return result;
         }
+
+
 
         /// <summary>
         /// 
@@ -316,5 +319,13 @@ namespace Amonikano.Library
         }
 
     }
+#else
+    public class custom_string_processor
+    {
+
+
+    }
+
 #endif
+
 }
